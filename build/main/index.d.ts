@@ -1,6 +1,6 @@
 export { MutablePosition } from './MutablePosition';
 export { MutableRange } from './MutableRange';
-export { Position } from './Position';
+export { Position, positionComparator } from './Position';
 export { Range } from './Range';
 export { MappingTree } from './MappingTree';
 export { TextAndMappings } from './CodeWriter';

@@ -66,6 +66,25 @@ var Position = (function () {
     };
     return Position;
 }());
+function positionComparator(a, b) {
+    if (a.line < b.line) {
+        return -1;
+    }
+    else if (a.line > b.line) {
+        return 1;
+    }
+    else {
+        if (a.column < b.column) {
+            return -1;
+        }
+        else if (a.column > b.column) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+}
 
 var Range = (function () {
     /**
@@ -441,6 +460,7 @@ var CodeWriter = (function () {
 exports.MutablePosition = MutablePosition;
 exports.MutableRange = MutableRange;
 exports.Position = Position;
+exports.positionComparator = positionComparator;
 exports.Range = Range;
 exports.MappingTree = MappingTree;
 exports.CodeWriter = CodeWriter;
