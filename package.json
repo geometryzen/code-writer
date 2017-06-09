@@ -1,6 +1,6 @@
 {
     "name": "code-writer",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Polyglot code writer with bidirectional source-target mapping",
     "author": {
         "name": "David Geo Holmes",
@@ -21,9 +21,6 @@
     "repository": {
         "type": "git",
         "url": "git://github.com/geometryzen/code-writer.git"
-    },
-    "engines": {
-        "node": "0.12.0"
     },
     "dependencies": {},
     "scripts": {
