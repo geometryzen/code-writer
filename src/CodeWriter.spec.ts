@@ -222,4 +222,147 @@ describe("CodeWriter", function () {
             });
         });
     });
+    describe("binOp", function () {
+        it("a+b", function () {
+            const cw = new CodeWriter(1, 0, {});
+            cw.name("a", new Range({ line: 1, column: 0 }, { line: 1, column: 1 }));
+            cw.binOp("+", new Range({ line: 1, column: 1 }, { line: 1, column: 2 }));
+            cw.name("b", new Range({ line: 1, column: 2 }, { line: 1, column: 3 }));
+            const result = cw.snapshot();
+            const text = result.text;
+            const tree = result.tree;
+            expect(text).toBe("a+b");
+            // console.log(JSON.stringify(tree, null, 2));
+            // top level
+            expect(tree.source.begin.line).toBe(1);
+            expect(tree.source.begin.column).toBe(0);
+            expect(tree.source.end.line).toBe(1);
+            expect(tree.source.end.column).toBe(3);
+            expect(tree.target.begin.line).toBe(1);
+            expect(tree.target.begin.column).toBe(0);
+            expect(tree.target.end.line).toBe(1);
+            expect(tree.target.end.column).toBe(3);
+            // a
+            expect(tree.children[0].source.begin.line).toBe(1);
+            expect(tree.children[0].source.begin.column).toBe(0);
+            expect(tree.children[0].source.end.line).toBe(1);
+            expect(tree.children[0].source.end.column).toBe(1);
+            expect(tree.children[0].target.begin.line).toBe(1);
+            expect(tree.children[0].target.begin.column).toBe(0);
+            expect(tree.children[0].target.end.line).toBe(1);
+            expect(tree.children[0].target.end.column).toBe(1);
+            // +
+            expect(tree.children[1].source.begin.line).toBe(1);
+            expect(tree.children[1].source.begin.column).toBe(1);
+            expect(tree.children[1].source.end.line).toBe(1);
+            expect(tree.children[1].source.end.column).toBe(2);
+            expect(tree.children[1].target.begin.line).toBe(1);
+            expect(tree.children[1].target.begin.column).toBe(1);
+            expect(tree.children[1].target.end.line).toBe(1);
+            expect(tree.children[1].target.end.column).toBe(2);
+            // b
+            expect(tree.children[2].source.begin.line).toBe(1);
+            expect(tree.children[2].source.begin.column).toBe(2);
+            expect(tree.children[2].source.end.line).toBe(1);
+            expect(tree.children[2].source.end.column).toBe(3);
+            expect(tree.children[2].target.begin.line).toBe(1);
+            expect(tree.children[2].target.begin.column).toBe(2);
+            expect(tree.children[2].target.end.line).toBe(1);
+            expect(tree.children[2].target.end.column).toBe(3);
+        });
+        it("a +b", function () {
+            const cw = new CodeWriter(1, 0, {});
+            cw.name("a", new Range({ line: 1, column: 0 }, { line: 1, column: 1 }));
+            cw.binOp("+", new Range({ line: 1, column: 2 }, { line: 1, column: 3 }));
+            cw.name("b", new Range({ line: 1, column: 3 }, { line: 1, column: 4 }));
+            const result = cw.snapshot();
+            const text = result.text;
+            const tree = result.tree;
+            expect(text).toBe("a+b");
+            // console.log(JSON.stringify(tree, null, 2));
+            // top level
+            expect(tree.source.begin.line).toBe(1);
+            expect(tree.source.begin.column).toBe(0);
+            expect(tree.source.end.line).toBe(1);
+            expect(tree.source.end.column).toBe(4);
+            expect(tree.target.begin.line).toBe(1);
+            expect(tree.target.begin.column).toBe(0);
+            expect(tree.target.end.line).toBe(1);
+            expect(tree.target.end.column).toBe(3);
+            // a
+            expect(tree.children[0].source.begin.line).toBe(1);
+            expect(tree.children[0].source.begin.column).toBe(0);
+            expect(tree.children[0].source.end.line).toBe(1);
+            expect(tree.children[0].source.end.column).toBe(1);
+            expect(tree.children[0].target.begin.line).toBe(1);
+            expect(tree.children[0].target.begin.column).toBe(0);
+            expect(tree.children[0].target.end.line).toBe(1);
+            expect(tree.children[0].target.end.column).toBe(1);
+            // +
+            expect(tree.children[1].source.begin.line).toBe(1);
+            expect(tree.children[1].source.begin.column).toBe(2);
+            expect(tree.children[1].source.end.line).toBe(1);
+            expect(tree.children[1].source.end.column).toBe(3);
+            expect(tree.children[1].target.begin.line).toBe(1);
+            expect(tree.children[1].target.begin.column).toBe(1);
+            expect(tree.children[1].target.end.line).toBe(1);
+            expect(tree.children[1].target.end.column).toBe(2);
+            // b
+            expect(tree.children[2].source.begin.line).toBe(1);
+            expect(tree.children[2].source.begin.column).toBe(3);
+            expect(tree.children[2].source.end.line).toBe(1);
+            expect(tree.children[2].source.end.column).toBe(4);
+            expect(tree.children[2].target.begin.line).toBe(1);
+            expect(tree.children[2].target.begin.column).toBe(2);
+            expect(tree.children[2].target.end.line).toBe(1);
+            expect(tree.children[2].target.end.column).toBe(3);
+        });
+        it("a+ b", function () {
+            const cw = new CodeWriter(1, 0, {});
+            cw.name("a", new Range({ line: 1, column: 0 }, { line: 1, column: 1 }));
+            cw.binOp("+", new Range({ line: 1, column: 1 }, { line: 1, column: 2 }));
+            cw.name("b", new Range({ line: 1, column: 3 }, { line: 1, column: 4 }));
+            const result = cw.snapshot();
+            const text = result.text;
+            const tree = result.tree;
+            expect(text).toBe("a+b");
+            // console.log(JSON.stringify(tree, null, 2));
+            // top level
+            expect(tree.source.begin.line).toBe(1);
+            expect(tree.source.begin.column).toBe(0);
+            expect(tree.source.end.line).toBe(1);
+            expect(tree.source.end.column).toBe(4);
+            expect(tree.target.begin.line).toBe(1);
+            expect(tree.target.begin.column).toBe(0);
+            expect(tree.target.end.line).toBe(1);
+            expect(tree.target.end.column).toBe(3);
+            // a
+            expect(tree.children[0].source.begin.line).toBe(1);
+            expect(tree.children[0].source.begin.column).toBe(0);
+            expect(tree.children[0].source.end.line).toBe(1);
+            expect(tree.children[0].source.end.column).toBe(1);
+            expect(tree.children[0].target.begin.line).toBe(1);
+            expect(tree.children[0].target.begin.column).toBe(0);
+            expect(tree.children[0].target.end.line).toBe(1);
+            expect(tree.children[0].target.end.column).toBe(1);
+            // +
+            expect(tree.children[1].source.begin.line).toBe(1);
+            expect(tree.children[1].source.begin.column).toBe(1);
+            expect(tree.children[1].source.end.line).toBe(1);
+            expect(tree.children[1].source.end.column).toBe(2);
+            expect(tree.children[1].target.begin.line).toBe(1);
+            expect(tree.children[1].target.begin.column).toBe(1);
+            expect(tree.children[1].target.end.line).toBe(1);
+            expect(tree.children[1].target.end.column).toBe(2);
+            // b
+            expect(tree.children[2].source.begin.line).toBe(1);
+            expect(tree.children[2].source.begin.column).toBe(3);
+            expect(tree.children[2].source.end.line).toBe(1);
+            expect(tree.children[2].source.end.column).toBe(4);
+            expect(tree.children[2].target.begin.line).toBe(1);
+            expect(tree.children[2].target.begin.column).toBe(2);
+            expect(tree.children[2].target.end.line).toBe(1);
+            expect(tree.children[2].target.end.column).toBe(3);
+        });
+    });
 });
