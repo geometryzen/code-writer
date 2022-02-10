@@ -237,7 +237,7 @@ export class CodeWriter {
         assert(this.stack.length === 1, "stack length is not zero");
         return this.stack.dispose();
     }
-    binOp(binOp: '+' | '-' | '*' | '/' | '|' | '^' | '&' | '<<' | '>>' | '%' | '//', source: Range): void {
+    binOp(binOp: '+' | '-' | '*' | '/' | '|' | '^' | '&' | '<<' | '>>' | '%' | '//' | '**', source: Range): void {
         const target = new MutableRange(new MutablePosition(-5, -5), new MutablePosition(-5, -5));
         const tree = new MappingTree(source, target, null);
         if (this.options.insertSpaceBeforeAndAfterBinaryOperators) {
