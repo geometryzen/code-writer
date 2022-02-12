@@ -1,20 +1,45 @@
-// rollup.config.js
-import commonjs from 'rollup-plugin-commonjs';
-import nodeResolve from 'rollup-plugin-node-resolve';
-import alias from 'rollup-plugin-alias';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import typescript from '@rollup/plugin-typescript';
+// import { terser } from 'rollup-plugin-terser';
+import external from 'rollup-plugin-peer-deps-external';
+import dts from 'rollup-plugin-dts';
 
-const substituteModulePaths = {
-}
+const packageJson = require('./package.json');
 
-export default {
-    entry: 'build/module/index.js',
-    sourceMap: true,
-    external: ['generic-rbtree'],
-    plugins: [
-        alias(substituteModulePaths),
-        nodeResolve({
-            browser: true
-        }),
-        commonjs()
-    ]
-}
+export default [
+    {
+        input: 'src/index.ts',
+        output: [
+            {
+                file: packageJson.browser,
+                format: 'umd',
+                sourcemap: true,
+                name: 'CodeWriter'
+            },
+            {
+                file: packageJson.main,
+                format: 'cjs',
+                sourcemap: true,
+                name: 'CodeWriter'
+            },
+            {
+                file: packageJson.module,
+                format: 'esm',
+                sourcemap: true
+            }
+        ],
+        plugins: [
+            external(),
+            resolve(),
+            commonjs(),
+            typescript({ tsconfig: './tsconfig.json' }),
+            // terser()
+        ]
+    },
+    {
+        input: 'build/module/types/index.d.ts',
+        output: [{ file: packageJson.types, format: "esm" }],
+        plugins: [dts()],
+    }
+]

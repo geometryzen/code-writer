@@ -1,99 +1,11 @@
-// Type definitions for code-writer 0.1.0
-// Project: https://github.com/geometryzen/code-writer
-//
-// This file was created manually in order to support the code-writer library.
-
-
-export class MutablePosition {
-    /**
-     * 1-based line number.
-     */
-    line: number;
-    /**
-     * 0-based column index.
-     */
-    column: number;
-    /**
-     *
-     * @param line
-     * @param column
-     */
-    constructor(line: number, column: number);
-    offset(rows: number, cols: number): void;
-}
-
-export class MutableRange {
-    readonly begin: MutablePosition;
-    readonly end: MutablePosition;
-    constructor(begin: MutablePosition, end: MutablePosition);
-    offset(rows: number, cols: number): void;
-}
-
-export class Position {
-    /**
-     * 1-based line number.
-     */
-    public readonly line: number;
-    /**
-     * 0-based column index.
-     */
-    public readonly column: number;
-    /**
-     *
-     */
-    constructor(line: number, column: number);
-}
-
-export class Range {
-    /**
-     * begin is always defined.
-     */
-    public readonly begin: Position;
-    /**
-     * end is always defined.
-     */
-    public readonly end: Position;
-    /**
-     *
-     */
-    constructor(begin: Position, end: Position);
-}
-
-
-export class MappingTree {
-    /**
-     *
-     */
-    public readonly source: Range;
-    /**
-     *
-     */
-    public readonly target: MutableRange;
-    /**
-     *
-     */
-    public readonly children: MappingTree[];
-    /**
-     * @param source
-     * @param target
-     * @param children
-     */
-    constructor(source: Range, target: MutableRange, children: MappingTree[]);
-    offset(rows: number, cols: number): void;
-    mappings(): { source: Range, target: MutableRange }[];
-}
-
-export interface TextAndMappings {
-    text: string;
-    tree: MappingTree;
-}
-
-export enum IndentStyle {
+import { Position } from './Position';
+import { Range } from './Range';
+import { MappingTree } from './MappingTree';
+export declare enum IndentStyle {
     None = 0,
     Block = 1,
-    Smart = 2,
+    Smart = 2
 }
-
 export interface EditorOptions {
     baseIndentSize?: number;
     indentSize?: number;
@@ -102,7 +14,6 @@ export interface EditorOptions {
     convertTabsToSpaces?: boolean;
     indentStyle?: IndentStyle;
 }
-
 export interface FormatCodeOptions extends EditorOptions {
     insertSpaceAfterCommaDelimiter?: boolean;
     insertSpaceAfterSemicolonInForStatements?: boolean;
@@ -120,8 +31,19 @@ export interface FormatCodeOptions extends EditorOptions {
     placeOpenBraceOnNewLineForFunctions?: boolean;
     placeOpenBraceOnNewLineForControlBlocks?: boolean;
 }
-
-export class CodeWriter {
+export interface TextAndMappings {
+    text: string;
+    tree: MappingTree;
+}
+/**
+ * A smart buffer for writing TypeScript code.
+ */
+export declare class CodeWriter {
+    private options;
+    private readonly stack;
+    /**
+     * Determines the indentation.
+     */
     /**
      * Constructs a CodeWriter instance using the specified options.
      */
@@ -141,25 +63,22 @@ export class CodeWriter {
     str(text: string, source: Range): void;
     write(text: string, tree: MappingTree): void;
     snapshot(): TextAndMappings;
-    binOp(binOp: '+' | '-' | '*' | '/' | '|' | '^' | '&' | '<<' | '>>' | '%' | '//', source: Range): void;
+    binOp(binOp: '+' | '-' | '*' | '/' | '|' | '^' | '&' | '<<' | '>>' | '%' | '//' | '**', source: Range): void;
+    unaryOp(unaryOp: '+' | '-' | '~' | '!', source: Range): void;
     comma(begin: Position | null, end: Position | null): void;
     space(): void;
-
     beginBlock(): void;
     endBlock(): void;
-
     beginBracket(): void;
     endBracket(): void;
-
     beginObject(): void;
     endObject(): void;
-
     openParen(): void;
     closeParen(): void;
-
     beginQuote(): void;
     endQuote(): void;
-
     beginStatement(): void;
     endStatement(): void;
+    private prolog;
+    private epilog;
 }

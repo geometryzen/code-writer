@@ -1,59 +1,166 @@
-import { assert } from './asserts';
-import { Position } from './Position';
-import { Range } from './Range';
-import { MutablePosition } from './MutablePosition';
-import { MutableRange } from './MutableRange';
-import { MappingTree } from './MappingTree';
+'use strict';
 
-export enum IndentStyle {
-    None = 0,
-    Block = 1,
-    Smart = 2,
+Object.defineProperty(exports, '__esModule', { value: true });
+
+class MutablePosition {
+    constructor(line, column) {
+        this.line = line;
+        this.column = column;
+        // TODO
+    }
+    offset(rows, cols) {
+        this.line += rows;
+        this.column += cols;
+    }
+    toString() {
+        return `[${this.line}, ${this.column}]`;
+    }
 }
 
-export interface EditorOptions {
-    baseIndentSize?: number;
-    indentSize?: number;
-    tabSize?: number;
-    newLineCharacter?: string;
-    convertTabsToSpaces?: boolean;
-    indentStyle?: IndentStyle;
+/**
+ * We're looking for something that is truthy, not just true.
+ */
+function assert(condition, message) {
+    if (!condition) {
+        throw new Error(message);
+    }
 }
 
-export interface FormatCodeOptions extends EditorOptions {
-    insertSpaceAfterCommaDelimiter?: boolean;
-    insertSpaceAfterSemicolonInForStatements?: boolean;
-    insertSpaceBeforeAndAfterBinaryOperators?: boolean;
-    insertSpaceAfterConstructor?: boolean;
-    insertSpaceAfterKeywordsInControlFlowStatements?: boolean;
-    insertSpaceAfterFunctionKeywordForAnonymousFunctions?: boolean;
-    insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis?: boolean;
-    insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets?: boolean;
-    insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces?: boolean;
-    insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces?: boolean;
-    insertSpaceAfterOpeningAndBeforeClosingJsxExpressionBraces?: boolean;
-    insertSpaceAfterTypeAssertion?: boolean;
-    insertSpaceBeforeFunctionParenthesis?: boolean;
-    placeOpenBraceOnNewLineForFunctions?: boolean;
-    placeOpenBraceOnNewLineForControlBlocks?: boolean;
+class MutableRange {
+    /**
+     *
+     */
+    constructor(begin, end) {
+        this.begin = begin;
+        this.end = end;
+        assert(begin, "begin must be defined");
+        assert(end, "end must be defined");
+        this.begin = begin;
+        this.end = end;
+    }
+    offset(rows, cols) {
+        this.begin.offset(rows, cols);
+        this.end.offset(rows, cols);
+    }
+    toString() {
+        return `${this.begin} to ${this.end}`;
+    }
 }
 
+class Position {
+    /**
+     *
+     */
+    constructor(line, column) {
+        this.line = line;
+        this.column = column;
+    }
+    toString() {
+        return `[${this.line}, ${this.column}]`;
+    }
+}
+function positionComparator(a, b) {
+    if (a.line < b.line) {
+        return -1;
+    }
+    else if (a.line > b.line) {
+        return 1;
+    }
+    else {
+        if (a.column < b.column) {
+            return -1;
+        }
+        else if (a.column > b.column) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+}
+
+class Range {
+    /**
+     *
+     */
+    constructor(begin, end) {
+        assert(begin, "begin must be defined");
+        assert(end, "end must be defined");
+        this.begin = begin;
+        this.end = end;
+    }
+    toString() {
+        return `${this.begin} to ${this.end}`;
+    }
+}
+
+/**
+ * A tree that enables ranges in the source document to be mapped to ranges in the target document.
+ * The ordering of child nodes is not defined.
+ * In many cases the children will be in target order owing to the writing process.
+ * TODO: For more efficient searching, children should be sorted in source order.
+ */
+class MappingTree {
+    /**
+     *
+     * @param source
+     * @param target
+     * @param children
+     */
+    constructor(source, target, children) {
+        this.children = children;
+        assert(source, "source must be defined");
+        assert(target, "target must be defined");
+        this.source = source;
+        this.target = target;
+    }
+    offset(rows, cols) {
+        if (this.target) {
+            this.target.offset(rows, cols);
+        }
+        if (this.children) {
+            for (const child of this.children) {
+                child.offset(rows, cols);
+            }
+        }
+    }
+    mappings() {
+        if (this.children) {
+            const maps = [];
+            for (const child of this.children) {
+                for (const map of child.mappings()) {
+                    maps.push(map);
+                }
+            }
+            return maps;
+        }
+        else {
+            return [{ source: this.source, target: this.target }];
+        }
+    }
+}
+
+exports.IndentStyle = void 0;
+(function (IndentStyle) {
+    IndentStyle[IndentStyle["None"] = 0] = "None";
+    IndentStyle[IndentStyle["Block"] = 1] = "Block";
+    IndentStyle[IndentStyle["Smart"] = 2] = "Smart";
+})(exports.IndentStyle || (exports.IndentStyle = {}));
 class StackElement {
-    private readonly texts: string[] = [];
-    private readonly trees: MappingTree[] = [];
-    // FIXME: A mutable position can be renamed to a Cursor.
-    private readonly cursor: MutablePosition;
-    constructor(public readonly bMark: string, public readonly eMark: string, targetBeginLine: number, targetBeginColumn: number) {
+    constructor(bMark, eMark, targetBeginLine, targetBeginColumn) {
+        this.bMark = bMark;
+        this.eMark = eMark;
+        this.texts = [];
+        this.trees = [];
         this.cursor = new MutablePosition(targetBeginLine, targetBeginColumn);
     }
     /**
      *
      */
-    write(text: string, tree: MappingTree): void {
+    write(text, tree) {
         assert(typeof text === 'string', "text must be a string");
         this.texts.push(text);
         this.trees.push(tree);
-
         const cursor = this.cursor;
         const beginLine = cursor.line;
         const beginColumn = cursor.column;
@@ -68,7 +175,7 @@ class StackElement {
         cursor.line = endLine;
         cursor.column = endColumn;
     }
-    snapshot(): { text: string; tree: MappingTree; targetEndLine: number; targetEndColumn: number } {
+    snapshot() {
         const texts = this.texts;
         const trees = this.trees;
         const N = texts.length;
@@ -84,7 +191,7 @@ class StackElement {
             let tBC = Number.MAX_SAFE_INTEGER;
             let tEL = Number.MIN_SAFE_INTEGER;
             let tEC = Number.MIN_SAFE_INTEGER;
-            const children: MappingTree[] = [];
+            const children = [];
             for (let i = 0; i < N; i++) {
                 const tree = trees[i];
                 if (tree) {
@@ -92,12 +199,10 @@ class StackElement {
                     sBC = Math.min(sBC, tree.source.begin.column);
                     sEL = Math.max(sEL, tree.source.end.line);
                     sEC = Math.max(sEC, tree.source.end.column);
-
                     tBL = Math.min(tBL, tree.target.begin.line);
                     tBC = Math.min(tBC, tree.target.begin.column);
                     tEL = Math.max(tEL, tree.target.end.line);
                     tEC = Math.max(tEC, tree.target.end.column);
-
                     children.push(tree);
                 }
             }
@@ -115,67 +220,57 @@ class StackElement {
             }
         }
     }
-    private package(text: string, tree: MappingTree): { text: string; tree: MappingTree; targetEndLine: number; targetEndColumn: number } {
+    package(text, tree) {
         return { text, tree, targetEndLine: this.cursor.line, targetEndColumn: this.cursor.column };
     }
-
-    public getLine(): number {
+    getLine() {
         return this.cursor.line;
     }
-    public getColumn(): number {
+    getColumn() {
         return this.cursor.column;
     }
 }
-
-function IDXLAST<T>(xs: ArrayLike<T>): number {
+function IDXLAST(xs) {
     return xs.length - 1;
 }
-
 /**
  *
  */
 class Stack {
-    private readonly elements: StackElement[] = [];
-    constructor(begin: string, end: string, targetLine: number, targetColumn: number) {
+    constructor(begin, end, targetLine, targetColumn) {
+        this.elements = [];
         this.elements.push(new StackElement(begin, end, targetLine, targetColumn));
     }
     get length() {
         return this.elements.length;
     }
-    push(element: StackElement): void {
+    push(element) {
         this.elements.push(element);
     }
-    pop(): StackElement {
+    pop() {
         return this.elements.pop();
     }
-    write(text: string, tree: MappingTree): void {
+    write(text, tree) {
         this.elements[IDXLAST(this.elements)].write(text, tree);
     }
-    dispose(): TextAndMappings {
+    dispose() {
         assert(this.elements.length === 1, "stack length should be 1");
         const textAndMappings = this.elements[IDXLAST(this.elements)].snapshot();
         this.pop();
         assert(this.elements.length === 0, "stack length should be 0");
         return textAndMappings;
     }
-    getLine(): number {
+    getLine() {
         return this.elements[IDXLAST(this.elements)].getLine();
     }
-    getColumn(): number {
+    getColumn() {
         return this.elements[IDXLAST(this.elements)].getColumn();
     }
 }
-
-export interface TextAndMappings {
-    text: string;
-    tree: MappingTree;
-}
-
 /**
  * A smart buffer for writing TypeScript code.
  */
-export class CodeWriter {
-    private readonly stack: Stack;
+class CodeWriter {
     /**
      * Determines the indentation.
      */
@@ -183,10 +278,11 @@ export class CodeWriter {
     /**
      * Constructs a CodeWriter instance using the specified options.
      */
-    constructor(beginLine: number, beginColumn: number, private options: FormatCodeOptions = {}) {
+    constructor(beginLine, beginColumn, options = {}) {
+        this.options = options;
         this.stack = new Stack('', '', beginLine, beginColumn);
     }
-    assign(text: '=', source: Range): void {
+    assign(text, source) {
         const target = new MutableRange(new MutablePosition(-3, -3), new MutablePosition(-3, -3));
         const tree = new MappingTree(source, target, null);
         this.stack.write(text, tree);
@@ -197,7 +293,7 @@ export class CodeWriter {
      * @param begin The position of the beginning of the name in the original source.
      * @param end The position of the end of the name in the original source.
      */
-    name(id: string, source: Range): void {
+    name(id, source) {
         if (source) {
             const target = new MutableRange(new MutablePosition(-2, -2), new MutablePosition(-2, -2));
             const tree = new MappingTree(source, target, null);
@@ -207,7 +303,7 @@ export class CodeWriter {
             this.stack.write(id, null);
         }
     }
-    num(text: string, source: Range): void {
+    num(text, source) {
         if (source) {
             const target = new MutableRange(new MutablePosition(-3, -3), new MutablePosition(-3, -3));
             const tree = new MappingTree(source, target, null);
@@ -220,7 +316,7 @@ export class CodeWriter {
     /**
      * Currently defined to be for string literals in unparsed form.
      */
-    str(text: string, source: Range): void {
+    str(text, source) {
         if (source) {
             const target = new MutableRange(new MutablePosition(-23, -23), new MutablePosition(-23, -23));
             const tree = new MappingTree(source, target, null);
@@ -230,14 +326,14 @@ export class CodeWriter {
             this.stack.write(text, null);
         }
     }
-    write(text: string, tree: MappingTree): void {
+    write(text, tree) {
         this.stack.write(text, tree);
     }
-    snapshot(): TextAndMappings {
+    snapshot() {
         assert(this.stack.length === 1, "stack length is not zero");
         return this.stack.dispose();
     }
-    binOp(binOp: '+' | '-' | '*' | '/' | '|' | '^' | '&' | '<<' | '>>' | '%' | '//' | '**', source: Range): void {
+    binOp(binOp, source) {
         const target = new MutableRange(new MutablePosition(-5, -5), new MutablePosition(-5, -5));
         const tree = new MappingTree(source, target, null);
         if (this.options.insertSpaceBeforeAndAfterBinaryOperators) {
@@ -249,12 +345,12 @@ export class CodeWriter {
             this.stack.write(binOp, tree);
         }
     }
-    unaryOp(unaryOp: '+' | '-' | '~' | '!', source: Range): void {
+    unaryOp(unaryOp, source) {
         const target = new MutableRange(new MutablePosition(-5, -5), new MutablePosition(-5, -5));
         const tree = new MappingTree(source, target, null);
         this.stack.write(unaryOp, tree);
     }
-    comma(begin: Position | null, end: Position | null): void {
+    comma(begin, end) {
         if (begin && end) {
             const source = new Range(begin, end);
             const target = new MutableRange(new MutablePosition(-4, -4), new MutablePosition(-4, -4));
@@ -268,51 +364,51 @@ export class CodeWriter {
             this.stack.write(' ', null);
         }
     }
-    space(): void {
+    space() {
         this.stack.write(' ', null);
     }
-    beginBlock(): void {
+    beginBlock() {
         this.prolog('{', '}');
     }
-    endBlock(): void {
+    endBlock() {
         this.epilog(false);
     }
-    beginBracket(): void {
+    beginBracket() {
         this.prolog('[', ']');
     }
-    endBracket(): void {
+    endBracket() {
         this.epilog(this.options.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets);
     }
-    beginObject(): void {
+    beginObject() {
         this.prolog('{', '}');
     }
-    endObject(): void {
+    endObject() {
         this.epilog(this.options.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces);
     }
-    openParen(): void {
+    openParen() {
         this.prolog('(', ')');
     }
-    closeParen(): void {
+    closeParen() {
         this.epilog(this.options.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis);
     }
-    beginQuote(): void {
+    beginQuote() {
         this.prolog("'", "'");
     }
-    endQuote(): void {
+    endQuote() {
         this.epilog(false);
     }
-    beginStatement(): void {
+    beginStatement() {
         this.prolog('', ';');
     }
-    endStatement(): void {
+    endStatement() {
         this.epilog(false);
     }
-    private prolog(bMark: string, eMark: string): void {
+    prolog(bMark, eMark) {
         const line = this.stack.getLine();
         const column = this.stack.getColumn();
         this.stack.push(new StackElement(bMark, eMark, line, column));
     }
-    private epilog(insertSpaceAfterOpeningAndBeforeClosingNonempty: boolean | undefined): void {
+    epilog(insertSpaceAfterOpeningAndBeforeClosingNonempty) {
         const popped = this.stack.pop();
         const textAndMappings = popped.snapshot();
         const text = textAndMappings.text;
@@ -344,3 +440,12 @@ export class CodeWriter {
         }
     }
 }
+
+exports.CodeWriter = CodeWriter;
+exports.MappingTree = MappingTree;
+exports.MutablePosition = MutablePosition;
+exports.MutableRange = MutableRange;
+exports.Position = Position;
+exports.Range = Range;
+exports.positionComparator = positionComparator;
+//# sourceMappingURL=index.js.map
